@@ -27,6 +27,7 @@ const    uint16_t timeout = 30000;              // 30 seconds sleep timer
 
 // main function
 int main(void) {
+  // setup
   set_sleep_mode (SLEEP_MODE_PWR_DOWN);         // set sleep mode to power down
   PRR    = (1<<PRADC);                          // shut down ADC to save power
   DDRB   = (1<<LED) | (1<<BUZZER) | (1<<EMPTY); // LED, BUZZER and EMPTY pin as output
@@ -40,7 +41,7 @@ int main(void) {
   GIMSK  = (1<<PCIE);                           // enable pin change interrupts
   sei();                                        // enable global interrupts
 
-  // mail loop
+  // loop
   while(1) {
     if (ACSR & (1<<ACO)) TIMSK0 |=  (1<<OCIE0B);// buzzer on  if comparator output is 1
     else                 TIMSK0 &= ~(1<<OCIE0B);// buzzer off if comparator output is 0
