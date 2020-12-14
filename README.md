@@ -111,7 +111,7 @@ If using the makefile (Linux/Mac):
 - Open the makefile and change the programmer if you are not using usbasp.
 - Open a terminal.
 - Navigate to the folder with the makefile and main.c.
-- Run "make hex" to compile or "make install" to compile, burn the fuses and upload the firmware.
+- Run "make install" to compile, burn the fuses and upload the firmware.
 
 ![pic2.jpg](https://github.com/wagiminator/ATtiny13-ContinuityTester/blob/main/documentation/ContinuityTester_pic2.jpg)
 ![pic3.jpg](https://github.com/wagiminator/ATtiny13-ContinuityTester/blob/main/documentation/ContinuityTester_pic3.jpg)
