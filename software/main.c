@@ -3,7 +3,7 @@
 // This code is just a conversion of the original one by David Johnson-Davies
 // from the ATtiny85 to the ATtiny13A. It implements a simple yet effective
 // continuity tester by using the internal analog comparator of the ATtiny.
-// Timer0 is set to CTC mode with a TOP value of 174 and a prescaler of 8.
+// Timer0 is set to CTC mode with a TOP value of 149 and a prescaler of 8.
 // At a clockspeed of 1.2 MHz it fires every millisecond the compare match A
 // interrupt which is used as a simple millis counter. In addition the compare
 // match interrupt B can be activated to toggle the buzzer pin at a frequency
