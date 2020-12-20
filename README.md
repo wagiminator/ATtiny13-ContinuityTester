@@ -1,6 +1,8 @@
 # Continuity Tester based on ATtiny13A
 The simple yet effective Continuity Tester is just a conversion of the original one by [David Johnson-Davies](http://www.technoblogy.com/show?1YON) from the ATtiny85 to the ATtiny13A. It is designed to check circuit wiring and PCB tracks.
 
+- Project Files (EasyEDA): https://easyeda.com/wagiminator/attiny13-tinyprobe
+
 ![pic1.jpg](https://github.com/wagiminator/ATtiny13-ContinuityTester/blob/main/documentation/ContinuityTester_pic1.jpg)
 
 # Hardware
@@ -109,6 +111,10 @@ If using the makefile (Linux/Mac):
 - Open a terminal.
 - Navigate to the folder with the makefile and main.c.
 - Run "make install" to compile, burn the fuses and upload the firmware.
+
+# References, Links and Notes
+1. [Original Project by David Johnson-Davies](http://www.technoblogy.com/show?1YON)
+2. [ATtiny13A Datasheet](http://ww1.microchip.com/downloads/en/DeviceDoc/doc8126.pdf)
 
 ![pic2.jpg](https://github.com/wagiminator/ATtiny13-ContinuityTester/blob/main/documentation/ContinuityTester_pic2.jpg)
 ![pic3.jpg](https://github.com/wagiminator/ATtiny13-ContinuityTester/blob/main/documentation/ContinuityTester_pic3.jpg)
