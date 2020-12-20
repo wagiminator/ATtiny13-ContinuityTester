@@ -1,7 +1,7 @@
 # Continuity Tester based on ATtiny13A
 The simple yet effective Continuity Tester is just a conversion of the original one by [David Johnson-Davies](http://www.technoblogy.com/show?1YON) from the ATtiny85 to the ATtiny13A. It is designed to check circuit wiring and PCB tracks.
 
-- Project Files (EasyEDA): https://easyeda.com/wagiminator/attiny13-tinyprobe
+- Project Files (EasyEDA): https://easyeda.com/wagiminator/attiny13-continuity-tester
 
 ![pic1.jpg](https://github.com/wagiminator/ATtiny13-ContinuityTester/blob/main/documentation/ContinuityTester_pic1.jpg)
 
