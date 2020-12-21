@@ -13,6 +13,7 @@ The basic wiring is shown below:
 Connect one end of a wire to the GND terminal and use the other end together with the pogo pin to check the continuity of wires and traces. The device is powered by a 1220 coin cell battery. Please remember that only the rechargeable LIR1220 Li-Ion batteries work. The "normal" CR1220s don't deliver enough power for the buzzer.
 
 # Software
+## Implementation
 The code is using the internal analog comparator of the ATtiny. By using the internal pullup resistors on both inputs of the comparator and by using a 51 Ohm pulldown resistor to form a voltage divider on the positive input, the comparator output becomes high if the resistance between both probes is less then 51 Ohms. This indicates a continuity between the probes and the buzzer will be turned on. For a more precise explanation refer to [David's project](http://www.technoblogy.com/show?1YON). Timer0 is set to CTC mode with a TOP value of 149 and a prescaler of 8. At a clockspeed of 1.2 MHz it fires every millisecond the compare match A interrupt which is used as a simple millis counter. In addition the compare match interrupt B can be activated to toggle the buzzer pin at a frequency of 1000 Hz, which creates a "beep". If no continuity between the probes is detected for 30 seconds, the ATtiny is put into sleep, consuming almost no power. The device can be reactivated by holding the two probes together. The LED lights up when the device is activated and goes out when the ATtiny is asleep. The code needs only 252 bytes of flash if compiled with LTO.
 
 ```c
@@ -79,10 +80,10 @@ ISR(TIM0_COMPB_vect) {
 }
 ```
 
-# Compiling and Uploading
+## Compiling and Uploading
 Since there is no ICSP header on the board, you have to program the ATtiny either before soldering using an [SOP adapter](https://aliexpress.com/wholesale?SearchText=sop-8+150mil+adapter), or after soldering using an [EEPROM clip](https://aliexpress.com/wholesale?SearchText=sop8+eeprom+programming+clip). The [AVR Programmer Adapter](https://github.com/wagiminator/AVR-Programmer/tree/master/AVR_Programmer_Adapter) can help with this.
 
-## If using the Arduino IDE
+### If using the Arduino IDE
 - Make sure you have installed [MicroCore](https://github.com/MCUdude/MicroCore).
 - Go to **Tools -> Board -> MicroCore** and select **ATtiny13**.
 - Go to **Tools** and choose the following board options:
@@ -94,7 +95,7 @@ Since there is no ICSP header on the board, you have to program the ATtiny eithe
 - Go to **Tools -> Burn Bootloader** to burn the fuses.
 - Open ContinuityTester.ino and click **Upload**.
 
-## If using the precompiled hex-file
+### If using the precompiled hex-file
 - Make sure you have installed [avrdude](https://learn.adafruit.com/usbtinyisp/avrdude).
 - Connect your programmer to your PC and to the ATtiny.
 - Open a terminal.
@@ -104,7 +105,7 @@ Since there is no ICSP header on the board, you have to program the ATtiny eithe
   avrdude -c usbasp -p t13 -U lfuse:w:0x2a:m -U hfuse:w:0xfb:m -U flash:w:ContinuityTester.hex
   ```
 
-## If using the makefile (Linux/Mac)
+### If using the makefile (Linux/Mac)
 - Make sure you have installed [avr-gcc toolchain and avrdude](http://maxembedded.com/2015/06/setting-up-avr-gcc-toolchain-on-linux-and-mac-os-x/).
 - Connect your programmer to your PC and to the ATtiny.
 - Open the makefile and change the programmer if you are not using usbasp.
