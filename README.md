@@ -3,12 +3,12 @@ The simple yet effective Continuity Tester is just a conversion of the original 
 
 - Project Files (EasyEDA): https://easyeda.com/wagiminator/attiny13-continuity-tester
 
-![pic1.jpg](https://github.com/wagiminator/ATtiny13-ContinuityTester/blob/main/documentation/ContinuityTester_pic1.jpg)
+![pic1.jpg](https://raw.githubusercontent.com/wagiminator/ATtiny13-ContinuityTester/main/documentation/ContinuityTester_pic1.jpg)
 
 # Hardware
 The basic wiring is shown below:
 
-![wiring.png](https://github.com/wagiminator/ATtiny13-ContinuityTester/blob/main/documentation/ContinuityTester_wiring.png)
+![wiring.png](https://raw.githubusercontent.com/wagiminator/ATtiny13-ContinuityTester/main/documentation/ContinuityTester_wiring.png)
 
 Connect one end of a wire to the GND terminal and use the other end together with the pogo pin to check the continuity of wires and traces. The device is powered by a 1220 coin cell battery. Please remember that only the rechargeable LIR1220 Li-Ion batteries work. The "normal" CR1220s don't deliver enough power for the buzzer.
 
@@ -82,7 +82,7 @@ ISR(TIM0_COMPB_vect) {
 # Compiling and Uploading
 Since there is no ICSP header on the board, you have to program the ATtiny either before soldering using an [SOP adapter](https://aliexpress.com/wholesale?SearchText=sop-8+150mil+adapter), or after soldering using an [EEPROM clip](https://aliexpress.com/wholesale?SearchText=sop8+eeprom+programming+clip). The [AVR Programmer Adapter](https://github.com/wagiminator/AVR-Programmer/tree/master/AVR_Programmer_Adapter) can help with this.
 
-If using the Arduino IDE:
+## If using the Arduino IDE
 - Make sure you have installed [MicroCore](https://github.com/MCUdude/MicroCore).
 - Go to **Tools -> Board -> MicroCore** and select **ATtiny13**.
 - Go to **Tools** and choose the following board options:
@@ -94,7 +94,7 @@ If using the Arduino IDE:
 - Go to **Tools -> Burn Bootloader** to burn the fuses.
 - Open ContinuityTester.ino and click **Upload**.
 
-If using the precompiled hex-file (this may be a little different with Windows):
+## If using the precompiled hex-file
 - Make sure you have installed [avrdude](https://learn.adafruit.com/usbtinyisp/avrdude).
 - Connect your programmer to your PC and to the ATtiny.
 - Open a terminal.
@@ -104,7 +104,7 @@ If using the precompiled hex-file (this may be a little different with Windows):
   avrdude -c usbasp -p t13 -U lfuse:w:0x2a:m -U hfuse:w:0xfb:m -U flash:w:ContinuityTester.hex
   ```
 
-If using the makefile (Linux/Mac):
+## If using the makefile (Linux/Mac)
 - Make sure you have installed [avr-gcc toolchain and avrdude](http://maxembedded.com/2015/06/setting-up-avr-gcc-toolchain-on-linux-and-mac-os-x/).
 - Connect your programmer to your PC and to the ATtiny.
 - Open the makefile and change the programmer if you are not using usbasp.
@@ -116,5 +116,5 @@ If using the makefile (Linux/Mac):
 1. [Original Project by David Johnson-Davies](http://www.technoblogy.com/show?1YON)
 2. [ATtiny13A Datasheet](http://ww1.microchip.com/downloads/en/DeviceDoc/doc8126.pdf)
 
-![pic2.jpg](https://github.com/wagiminator/ATtiny13-ContinuityTester/blob/main/documentation/ContinuityTester_pic2.jpg)
-![pic3.jpg](https://github.com/wagiminator/ATtiny13-ContinuityTester/blob/main/documentation/ContinuityTester_pic3.jpg)
+![pic2.jpg](https://raw.githubusercontent.com/wagiminator/ATtiny13-ContinuityTester/main/documentation/ContinuityTester_pic2.jpg)
+![pic3.jpg](https://raw.githubusercontent.com/wagiminator/ATtiny13-ContinuityTester/main/documentation/ContinuityTester_pic3.jpg)
