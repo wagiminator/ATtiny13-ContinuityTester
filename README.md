@@ -14,7 +14,7 @@ Connect one end of a wire to the GND terminal and use the other end together wit
 
 # Software
 ## Implementation
-The code is using the internal analog comparator of the ATtiny. By using the internal pullup resistors on both inputs of the comparator and by using a 51 Ohm pulldown resistor to form a voltage divider on the positive input, the comparator output becomes high if the resistance between both probes is less then 51 Ohms. This indicates a continuity between the probes and the buzzer will be turned on. For a more precise explanation refer to [David's project](http://www.technoblogy.com/show?1YON). Timer0 is set to CTC mode with a TOP value of 149 and a prescaler of 8. At a clockspeed of 1.2 MHz it fires every millisecond the compare match A interrupt which is used as a simple millis counter. In addition the compare match interrupt B can be activated to toggle the buzzer pin at a frequency of 1000 Hz, which creates a "beep". If no continuity between the probes is detected for 30 seconds, the ATtiny is put into sleep, consuming almost no power. The device can be reactivated by holding the two probes together. The LED lights up when the device is activated and goes out when the ATtiny is asleep. The code needs only 252 bytes of flash if compiled with LTO.
+The code is using the internal analog comparator of the ATtiny. By using the internal pullup resistors on both inputs of the comparator and by using a 51 Ohm pulldown resistor to form a voltage divider on the positive input, the comparator output becomes high if the resistance between both probes is less then 51 Ohms. This indicates a continuity between the probes and the buzzer will be turned on. For a more precise explanation refer to [David's project](http://www.technoblogy.com/show?1YON). Timer0 is set to CTC mode with a TOP value of 127 and no prescaler. At a clockspeed of 128 kHz it fires every millisecond the compare match A interrupt which is used as a simple millis counter. In addition the compare match interrupt B can be activated to toggle the buzzer pin at a frequency of 1000 Hz, which creates a "beep". If no continuity between the probes is detected for 30 seconds, the ATtiny is put into sleep, consuming almost no power. The device can be reactivated by holding the two probes together. The LED lights up when the device is activated and goes out when the ATtiny is asleep. The code needs only 252 bytes of flash if compiled with LTO.
 
 ```c
 // libraries
@@ -40,10 +40,10 @@ int main(void) {
   PRR    = (1<<PRADC);                          // shut down ADC to save power
   DDRB   = (1<<LED) | (1<<BUZZER) | (1<<EMPTY); // LED, BUZZER and EMPTY pin as output
   PORTB  = (1<<LED) | (1<<REF)    | (1<<PROBE); // LED on, internal pullups for REF and PROBE
-  OCR0A  = 149;                                 // TOP value for timer0
-  OCR0B  = 74;                                  // for generating 1000Hz buzzer tone
+  OCR0A  = 127;                                 // TOP value for timer0
+  OCR0B  = 63;                                  // for generating 1000Hz buzzer tone
   TCCR0A = (1<<WGM01);                          // set timer0 CTC mode
-  TCCR0B = (1<<CS01);                           // start timer with prescaler 8
+  TCCR0B = (1<<CS00);                           // start timer with no prescaler
   TIMSK0 = (1<<OCIE0A);                         // enable output compare match A interrupt
   PCMSK  = (1<<PROBE);                          // enable interrupt on PROBE pin
   GIMSK  = (1<<PCIE);                           // enable pin change interrupts
@@ -87,7 +87,7 @@ Since there is no ICSP header on the board, you have to program the ATtiny eithe
 - Make sure you have installed [MicroCore](https://github.com/MCUdude/MicroCore).
 - Go to **Tools -> Board -> MicroCore** and select **ATtiny13**.
 - Go to **Tools** and choose the following board options:
-  - **Clock:**  1.2 MHz internal osc.
+  - **Clock:**  128 kHz internal osc.
   - **BOD:**    BOD disabled
   - **Timing:** Micros disabled
 - Connect your programmer to your PC and to the ATtiny.
@@ -102,7 +102,7 @@ Since there is no ICSP header on the board, you have to program the ATtiny eithe
 - Navigate to the folder with the hex-file.
 - Execute the following command (if necessary replace "usbasp" with the programmer you use):
   ```
-  avrdude -c usbasp -p t13 -U lfuse:w:0x2a:m -U hfuse:w:0xfb:m -U flash:w:ContinuityTester.hex
+  avrdude -c usbasp -p t13 -U lfuse:w:0x3b:m -U hfuse:w:0xff:m -U flash:w:ContinuityTester.hex
   ```
 
 ### If using the makefile (Linux/Mac)

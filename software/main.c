@@ -3,8 +3,8 @@
 // This code is just a conversion of the original one by David Johnson-Davies
 // from the ATtiny85 to the ATtiny13A. It implements a simple yet effective
 // continuity tester by using the internal analog comparator of the ATtiny.
-// Timer0 is set to CTC mode with a TOP value of 149 and a prescaler of 8.
-// At a clockspeed of 1.2 MHz it fires every millisecond the compare match A
+// Timer0 is set to CTC mode with a TOP value of 127 and no prescaler.
+// At a clockspeed of 128 kHz it fires every millisecond the compare match A
 // interrupt which is used as a simple millis counter. In addition the compare
 // match interrupt B can be activated to toggle the buzzer pin at a frequency
 // of 1000 Hz. The code needs only 252 bytes of flash if compiled with LTO.
@@ -17,7 +17,7 @@
 //                          +----+  
 //
 // Controller:  ATtiny13A
-// Clockspeed:  1.2 MHz internal
+// Clockspeed:  128 kHz internal
 //
 // Based on the project by David Johnson-Davies.
 // ( http://www.technoblogy.com/show?1YON )
@@ -46,21 +46,20 @@ const    uint16_t timeout = 30000;              // 30 seconds sleep timer
 
 // main function
 int main(void) {
-  // setup
   set_sleep_mode (SLEEP_MODE_PWR_DOWN);         // set sleep mode to power down
   PRR    = (1<<PRADC);                          // shut down ADC to save power
   DDRB   = (1<<LED) | (1<<BUZZER) | (1<<EMPTY); // LED, BUZZER and EMPTY pin as output
   PORTB  = (1<<LED) | (1<<REF) | (1<<PROBE);    // LED on, internal pullups for REF and PROBE
-  OCR0A  = 149;                                 // TOP value for timer0
-  OCR0B  = 74;                                  // for generating 1000Hz buzzer tone
+  OCR0A  = 127;                                 // TOP value for timer0
+  OCR0B  = 63;                                  // for generating 1000Hz buzzer tone
   TCCR0A = (1<<WGM01);                          // set timer0 CTC mode
-  TCCR0B = (1<<CS01);                           // start timer with prescaler 8
+  TCCR0B = (1<<CS00);                           // start timer with no prescaler
   TIMSK0 = (1<<OCIE0A);                         // enable output compare match A interrupt
   PCMSK  = (1<<PROBE);                          // enable interrupt on PROBE pin
   GIMSK  = (1<<PCIE);                           // enable pin change interrupts
   sei();                                        // enable global interrupts
 
-  // loop
+  // mail loop
   while(1) {
     if (ACSR & (1<<ACO)) TIMSK0 |=  (1<<OCIE0B);// buzzer on  if comparator output is 1
     else                 TIMSK0 &= ~(1<<OCIE0B);// buzzer off if comparator output is 0

@@ -8,31 +8,13 @@
 
 # Compiler Options
 DEVICE  = attiny13a
-CLOCK   = 1200000
+CLOCK   = 128000
 
 # Programmer Options
 PROGRMR = usbasp
 TGTDEV  = attiny13
-LFUSE   = 0x2a
-HFUSE   = 0xfb
-
-# Objects
-OBJECTS = main.o
-
-# Commands
-AVRDUDE = avrdude -c $(PROGRMR) -p $(TGTDEV)
-COMPILE = avr-gcc -Wall -Os -flto -mmcu=$(DEVICE) -DF_CPU=$(CLOCK) -DDEBUG_LEVEL=0
-CLEAN   = rm -f main.lst main.obj main.cof main.list main.map main.eep.hex *.o main.s
-
-# Compiler Options
-DEVICE  = attiny13a
-CLOCK   = 1200000
-
-# Programmer Options
-PROGRMR = usbasp
-TGTDEV  = attiny13
-LFUSE   = 0x2a
-HFUSE   = 0xfb
+LFUSE   = 0x3b
+HFUSE   = 0xff
 
 # Objects
 OBJECTS = main.o
