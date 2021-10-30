@@ -1,5 +1,15 @@
-// ATtiny13 Continuity Tester
+// ===================================================================================
+// Project:   Continuity Tester based on ATtiny13A
+// Version:   v1.0
+// Year:      2020
+// Author:    Stefan Wagner
+// Github:    https://github.com/wagiminator
+// EasyEDA:   https://easyeda.com/wagiminator
+// License:   http://creativecommons.org/licenses/by-sa/3.0/
+// ===================================================================================
 //
+// Description:
+// ------------
 // This code is just a conversion of the original one by David Johnson-Davies
 // from the ATtiny85 to the ATtiny13A. It implements a simple yet effective
 // continuity tester by using the internal analog comparator of the ATtiny.
@@ -9,47 +19,61 @@
 // match interrupt B can be activated to toggle the buzzer pin at a frequency
 // of 1000 Hz.
 //
-//                          +-\/-+
-//        --- A0 (D5) PB5  1|°   |8  Vcc
-//        --- A3 (D3) PB3  2|    |7  PB2 (D2) A1 --- LED
-// Buzzer --- A2 (D4) PB4  3|    |6  PB1 (D1) ------ Probe
-//                    GND  4|    |5  PB0 (D0) ------ Reference
-//                          +----+  
+// References:
+// -----------
+// Based on the project by David Johnson-Davies:
+// http://www.technoblogy.com/show?1YON
 //
-// Controller:  ATtiny13
+// Wiring:
+// -------
+//                           +-\/-+
+//        --- RST ADC0 PB5  1|°   |8  Vcc
+//        ------- ADC3 PB3  2|    |7  PB2 ADC1 -------- LED
+// Buzzer ------- ADC2 PB4  3|    |6  PB1 AIN1 OC0B --- Probe
+//                     GND  4|    |5  PB0 AIN0 OC0A --- Reference
+//                           +----+
+//
+// Compilation Settings:
+// ---------------------
+// Controller:  ATtiny13A
 // Core:        MicroCore (https://github.com/MCUdude/MicroCore)
 // Clockspeed:  128 kHz internal
-// BOD:         BOD disabled (energy saving)
-// Timing:      Micros disabled (Timer0 is in use)
+// BOD:         BOD disabled
+// Timing:      Micros disabled
 //
-// Based on the project by David Johnson-Davies.
-// ( http://www.technoblogy.com/show?1YON )
+// Leave the rest on default settings. Don't forget to "Burn bootloader"!
+// No Arduino core functions or libraries are used. Use the makefile if 
+// you want to compile without Arduino IDE.
 //
-// 2020 by Stefan Wagner 
-// Project Files (EasyEDA): https://easyeda.com/wagiminator
-// Project Files (Github):  https://github.com/wagiminator
-// License: http://creativecommons.org/licenses/by-sa/3.0/
+// Fuse settings: -U lfuse:w:0x3b:m -U hfuse:w:0xff:m
 
 
-// libraries
-#include <avr/io.h>
-#include <avr/sleep.h>
-#include <avr/interrupt.h>
+// ===================================================================================
+// Libraries and Definitions
+// ===================================================================================
 
-// pin definitions
-#define REF     PB0
-#define PROBE   PB1
-#define LED     PB2
-#define EMPTY   PB3
-#define BUZZER  PB4
+// Libraries
+#include <avr/io.h>                             // for GPIO
+#include <avr/sleep.h>                          // for sleep mode
+#include <avr/interrupt.h>                      // for interrupts
 
-// global variables
-volatile uint16_t millis  = 0;                  // counts milliseconds
+// Pin definitions
+#define REF     PB0                             // reference pin
+#define PROBE   PB1                             // pin connected to probe
+#define LED     PB2                             // pin connected to LED
+#define EMPTY   PB3                             // unused pin
+#define BUZZER  PB4                             // pin connected to buzzer
+
+// Global variables
+volatile uint16_t tmillis = 0;                  // counts milliseconds
 const    uint16_t timeout = 30000;              // 30 seconds sleep timer
 
-// main function
+// ===================================================================================
+// Main Function
+// ===================================================================================
+
 int main(void) {
-  set_sleep_mode (SLEEP_MODE_PWR_DOWN);         // set sleep mode to power down
+  set_sleep_mode(SLEEP_MODE_PWR_DOWN);          // set sleep mode to power down
   PRR    = (1<<PRADC);                          // shut down ADC to save power
   DDRB   = (1<<LED) | (1<<BUZZER) | (1<<EMPTY); // LED, BUZZER and EMPTY pin as output
   PORTB  = (1<<LED) | (1<<REF) | (1<<PROBE);    // LED on, internal pullups for REF and PROBE
@@ -62,11 +86,11 @@ int main(void) {
   GIMSK  = (1<<PCIE);                           // enable pin change interrupts
   sei();                                        // enable global interrupts
 
-  // mail loop
+  // Loop
   while(1) {
-    if (ACSR & (1<<ACO)) TIMSK0 |=  (1<<OCIE0B);// buzzer on  if comparator output is 1
-    else                 TIMSK0 &= ~(1<<OCIE0B);// buzzer off if comparator output is 0
-    if (millis > timeout) {                     // go to sleep?
+    if(ACSR & (1<<ACO)) TIMSK0 |=  (1<<OCIE0B); // buzzer on  if comparator output is 1
+    else                TIMSK0 &= ~(1<<OCIE0B); // buzzer off if comparator output is 0
+    if(tmillis > timeout) {                     // go to sleep?
       PORTB &= ~(1<<LED);                       // LED off
       PORTB &= ~(1<<REF);                       // turn off pullup to save power
       sleep_mode();                             // go to sleep, wake up by pin change
@@ -76,18 +100,22 @@ int main(void) {
   }
 }
 
-// pin change interrupt service routine - resets millis
-ISR (PCINT0_vect) {
-  millis = 0;
+// ===================================================================================
+// Interrupt Service Routines
+// ===================================================================================
+
+// Pin change interrupt service routine - resets millis
+ISR(PCINT0_vect) {
+  tmillis = 0;                                  // reset millis counter
 }
 
-// timer/counter compare match A interrupt service routine (every millisecond)
+// Timer/counter compare match A interrupt service routine (every millisecond)
 ISR(TIM0_COMPA_vect) {
   PORTB &= ~(1<<BUZZER);                        // BUZZER pin LOW
-  millis++;                                     // increase millis counter
+  tmillis++;                                    // increase millis counter
 }
 
-// timer/counter compare match B interrupt service routine (enabled if buzzer has to beep)
+// Timer/counter compare match B interrupt service routine (enabled if buzzer has to beep)
 ISR(TIM0_COMPB_vect) {
   PORTB |= (1<<BUZZER);                         // BUZZER pin HIGH
 }

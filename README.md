@@ -17,29 +17,28 @@ Connect one end of a wire to the GND terminal and use the other end together wit
 The code is using the internal analog comparator of the ATtiny. By using the internal pullup resistors on both inputs of the comparator and by using a 51 Ohm pulldown resistor to form a voltage divider on the positive input, the comparator output becomes high if the resistance between both probes is less then 51 Ohms. This indicates a continuity between the probes and the buzzer will be turned on. For a more precise explanation refer to [David's project](http://www.technoblogy.com/show?1YON). Timer0 is set to CTC mode with a TOP value of 127 and no prescaler. At a clockspeed of 128 kHz it fires every millisecond the compare match A interrupt which is used as a simple millis counter. In addition the compare match interrupt B can be activated to toggle the buzzer pin at a frequency of 1000 Hz, which creates a "beep". If no continuity between the probes is detected for 30 seconds, the ATtiny is put into sleep, consuming almost no power. The device can be reactivated by holding the two probes together. The LED lights up when the device is activated and goes out when the ATtiny is asleep. The code needs only 252 bytes of flash if compiled with LTO.
 
 ```c
-// libraries
+// Libraries
 #include <avr/io.h>
 #include <avr/sleep.h>
 #include <avr/interrupt.h>
 
-// pin definitions
+// Pin definitions
 #define REF     PB0
 #define PROBE   PB1
 #define LED     PB2
 #define EMPTY   PB3
 #define BUZZER  PB4
 
-// global variables
-volatile uint16_t millis  = 0;                  // counts milliseconds
+// Global variables
+volatile uint16_t tmillis = 0;                  // counts milliseconds
 const    uint16_t timeout = 30000;              // 30 seconds sleep timer
 
-// main function
+// Main Function
 int main(void) {
-  // setup
   set_sleep_mode (SLEEP_MODE_PWR_DOWN);         // set sleep mode to power down
   PRR    = (1<<PRADC);                          // shut down ADC to save power
   DDRB   = (1<<LED) | (1<<BUZZER) | (1<<EMPTY); // LED, BUZZER and EMPTY pin as output
-  PORTB  = (1<<LED) | (1<<REF)    | (1<<PROBE); // LED on, internal pullups for REF and PROBE
+  PORTB  = (1<<LED) | (1<<REF) | (1<<PROBE);    // LED on, internal pullups for REF and PROBE
   OCR0A  = 127;                                 // TOP value for timer0
   OCR0B  = 63;                                  // for generating 1000Hz buzzer tone
   TCCR0A = (1<<WGM01);                          // set timer0 CTC mode
@@ -49,11 +48,11 @@ int main(void) {
   GIMSK  = (1<<PCIE);                           // enable pin change interrupts
   sei();                                        // enable global interrupts
 
-  // loop
+  // Loop
   while(1) {
     if (ACSR & (1<<ACO)) TIMSK0 |=  (1<<OCIE0B);// buzzer on  if comparator output is 1
     else                 TIMSK0 &= ~(1<<OCIE0B);// buzzer off if comparator output is 0
-    if (millis > timeout) {                     // go to sleep?
+    if (tmillis > timeout) {                    // go to sleep?
       PORTB &= ~(1<<LED);                       // LED off
       PORTB &= ~(1<<REF);                       // turn off pullup to save power
       sleep_mode();                             // go to sleep, wake up by pin change
@@ -63,18 +62,18 @@ int main(void) {
   }
 }
 
-// pin change interrupt service routine - resets millis
+// Pin change interrupt service routine - resets millis
 ISR (PCINT0_vect) {
-  millis = 0;
+  tmillis = 0;
 }
 
-// timer/counter compare match A interrupt service routine (every millisecond)
+// Timer/counter compare match A interrupt service routine (every millisecond)
 ISR(TIM0_COMPA_vect) {
   PORTB &= ~(1<<BUZZER);                        // BUZZER pin LOW
-  millis++;                                     // increase millis counter
+  tmillis++;                                    // increase millis counter
 }
 
-// timer/counter compare match B interrupt service routine (enabled if buzzer has to beep)
+// Timer/counter compare match B interrupt service routine (enabled if buzzer has to beep)
 ISR(TIM0_COMPB_vect) {
   PORTB |= (1<<BUZZER);                         // BUZZER pin HIGH
 }
@@ -102,7 +101,7 @@ Since there is no ICSP header on the board, you have to program the ATtiny eithe
 - Navigate to the folder with the hex-file.
 - Execute the following command (if necessary replace "usbasp" with the programmer you use):
   ```
-  avrdude -c usbasp -p t13 -U lfuse:w:0x3b:m -U hfuse:w:0xff:m -U flash:w:ContinuityTester.hex
+  avrdude -c usbasp -p t13 -U lfuse:w:0x3b:m -U hfuse:w:0xff:m -U flash:w:continuitytester.hex
   ```
 
 ### If using the makefile (Linux/Mac)
@@ -110,7 +109,7 @@ Since there is no ICSP header on the board, you have to program the ATtiny eithe
 - Connect your programmer to your PC and to the ATtiny.
 - Open the makefile and change the programmer if you are not using usbasp.
 - Open a terminal.
-- Navigate to the folder with the makefile and main.c.
+- Navigate to the folder with the makefile and sketch.
 - Run "make install" to compile, burn the fuses and upload the firmware.
 
 # References, Links and Notes
