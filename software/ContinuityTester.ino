@@ -65,8 +65,11 @@
 #define BUZZER  PB4                             // pin connected to buzzer
 
 // Global variables
-volatile uint16_t tmillis = 0;                  // counts milliseconds
-const    uint16_t timeout = 30000;              // 30 seconds sleep timer
+volatile uint8_t t_in_50millis = 0;             // counts within 50 milliseconds
+volatile uint8_t t50millis = 0;                 // counts of 50 milliseconds
+const    uint8_t timeout_50ms = 200;            // 10 seconds sleep timer
+
+static const uint8_t debounce_timeout_50ms = 1; // delay 50ms before turning buzzer off
 
 // ===================================================================================
 // Main Function
@@ -83,17 +86,25 @@ int main(void) {
   TCCR0B = (1<<CS00);                           // start timer with no prescaler
   TIMSK0 = (1<<OCIE0A);                         // enable output compare match A interrupt
   PCMSK  = (1<<PROBE);                          // enable interrupt on PROBE pin
-  GIMSK  = (1<<PCIE);                           // enable pin change interrupts
   sei();                                        // enable global interrupts
 
   // Loop
   while(1) {
-    if(ACSR & (1<<ACO)) TIMSK0 |=  (1<<OCIE0B); // buzzer on  if comparator output is 1
-    else                TIMSK0 &= ~(1<<OCIE0B); // buzzer off if comparator output is 0
-    if(tmillis > timeout) {                     // go to sleep?
+    if (ACSR & (1<<ACO)) {
+      t_in_50millis = 0;                        // reset millis counters
+      t50millis = 0;
+      TIMSK0 |=  (1<<OCIE0B);                   // buzzer on  if comparator output is 1
+    } else {
+      if (t50millis > debounce_timeout_50ms) {
+        TIMSK0 &= ~(1<<OCIE0B);                 // buzzer off if comparator output is 0
+      }
+    }
+    if (t50millis > timeout_50ms) {             // go to sleep?
       PORTB &= ~(1<<LED);                       // LED off
       PORTB &= ~(1<<REF);                       // turn off pullup to save power
+      GIMSK = (1<<PCIE);                        // enable pin change interrupts
       sleep_mode();                             // go to sleep, wake up by pin change
+      GIMSK &= ~(1<<PCIE);                      // disable pin change interrupts
       PORTB |=  (1<<REF);                       // turn on pullup on REF pin
       PORTB |=  (1<<LED);                       // LED on
     }
@@ -106,13 +117,18 @@ int main(void) {
 
 // Pin change interrupt service routine - resets millis
 ISR(PCINT0_vect) {
-  tmillis = 0;                                  // reset millis counter
+  t_in_50millis = 0;                            // reset millis counters
+  t50millis = 0;
 }
 
 // Timer/counter compare match A interrupt service routine (every millisecond)
 ISR(TIM0_COMPA_vect) {
   PORTB &= ~(1<<BUZZER);                        // BUZZER pin LOW
-  tmillis++;                                    // increase millis counter
+  t_in_50millis++;                              // increase millis countera
+  if (t_in_50millis == 50) {
+    t_in_50millis = 0;
+    t50millis++;
+  }
 }
 
 // Timer/counter compare match B interrupt service routine (enabled if buzzer has to beep)
