@@ -14,30 +14,34 @@ Connect one end of a wire to the GND terminal and use the other end together wit
 
 # Software
 ## Implementation
-The code is using the internal analog comparator of the ATtiny. By using the internal pullup resistors on both inputs of the comparator and by using a 51 Ohm pulldown resistor to form a voltage divider on the positive input, the comparator output becomes high if the resistance between both probes is less then 51 Ohms. This indicates a continuity between the probes and the buzzer will be turned on. For a more precise explanation refer to [David's project](http://www.technoblogy.com/show?1YON). Timer0 is set to CTC mode with a TOP value of 127 and no prescaler. At a clockspeed of 128 kHz it fires every millisecond the compare match A interrupt which is used as a simple millis counter. In addition the compare match interrupt B can be activated to toggle the buzzer pin at a frequency of 1000 Hz, which creates a "beep". If no continuity between the probes is detected for 30 seconds, the ATtiny is put into sleep, consuming almost no power. The device can be reactivated by holding the two probes together. The LED lights up when the device is activated and goes out when the ATtiny is asleep. The code needs only 252 bytes of flash if compiled with LTO.
+The code is using the internal analog comparator of the ATtiny. By using the internal pullup resistors on both inputs of the comparator and by using a 51 Ohm pulldown resistor to form a voltage divider on the positive input, the comparator output becomes high if the resistance between both probes is less then 51 Ohms. This indicates a continuity between the probes and the buzzer will be turned on. For a more precise explanation refer to [David's project](http://www.technoblogy.com/show?1YON). Timer0 is set to CTC mode with a TOP value of 127 and no prescaler. At a clockspeed of 128 kHz it fires every millisecond the compare match A interrupt which is used as a simple millis counter. In addition the compare match interrupt B can be activated to toggle the buzzer pin at a frequency of 1000 Hz, which creates a "beep". If no continuity between the probes is detected for 30 seconds, the ATtiny is put into sleep, consuming almost no power. The device can be reactivated by holding the two probes together. The LED lights up when the device is activated and goes out when the ATtiny is asleep. The code needs only 280 bytes of flash if compiled with LTO.
 
 ```c
 // Libraries
-#include <avr/io.h>
-#include <avr/sleep.h>
-#include <avr/interrupt.h>
+#include <avr/io.h>                             // for GPIO
+#include <avr/sleep.h>                          // for sleep mode
+#include <avr/interrupt.h>                      // for interrupts
 
 // Pin definitions
-#define REF     PB0
-#define PROBE   PB1
-#define LED     PB2
-#define EMPTY   PB3
-#define BUZZER  PB4
+#define REF       PB0                           // reference pin
+#define PROBE     PB1                           // pin connected to probe
+#define LED       PB2                           // pin connected to LED
+#define EMPTY     PB3                           // unused pin
+#define BUZZER    PB4                           // pin connected to buzzer
+
+// Firmware parameters
+#define TIMEOUT   10000                         // sleep timer in ms
+#define DEBOUNCE  50                            // buzzer debounce time in ms
 
 // Global variables
 volatile uint16_t tmillis = 0;                  // counts milliseconds
-const    uint16_t timeout = 30000;              // 30 seconds sleep timer
 
-// Main Function
+// Main function
 int main(void) {
-  set_sleep_mode (SLEEP_MODE_PWR_DOWN);         // set sleep mode to power down
+  set_sleep_mode(SLEEP_MODE_PWR_DOWN);          // set sleep mode to power down
   PRR    = (1<<PRADC);                          // shut down ADC to save power
-  DDRB   = (1<<LED) | (1<<BUZZER) | (1<<EMPTY); // LED, BUZZER and EMPTY pin as output
+  DIDR0  = (1<<REF) | (1<<EMPTY);               // disable digital input on REF and EMPTY
+  DDRB   = (1<<LED) | (1<<BUZZER);              // LED and BUZZER pin as output
   PORTB  = (1<<LED) | (1<<REF) | (1<<PROBE);    // LED on, internal pullups for REF and PROBE
   OCR0A  = 127;                                 // TOP value for timer0
   OCR0B  = 63;                                  // for generating 1000Hz buzzer tone
@@ -45,17 +49,22 @@ int main(void) {
   TCCR0B = (1<<CS00);                           // start timer with no prescaler
   TIMSK0 = (1<<OCIE0A);                         // enable output compare match A interrupt
   PCMSK  = (1<<PROBE);                          // enable interrupt on PROBE pin
-  GIMSK  = (1<<PCIE);                           // enable pin change interrupts
   sei();                                        // enable global interrupts
 
   // Loop
   while(1) {
-    if (ACSR & (1<<ACO)) TIMSK0 |=  (1<<OCIE0B);// buzzer on  if comparator output is 1
-    else                 TIMSK0 &= ~(1<<OCIE0B);// buzzer off if comparator output is 0
-    if (tmillis > timeout) {                    // go to sleep?
+    if(ACSR & (1<<ACO)) {                       // continuity detected?
+      tmillis = 0;                              // reset millis counter
+      TIMSK0 |= (1<<OCIE0B);                    // buzzer on
+    } else if(tmillis > DEBOUNCE)               // no continuity detected?
+      TIMSK0 &= ~(1<<OCIE0B);                   // buzzer off after debounce time
+
+    if(tmillis > TIMEOUT) {                     // go to sleep?
       PORTB &= ~(1<<LED);                       // LED off
       PORTB &= ~(1<<REF);                       // turn off pullup to save power
+      GIMSK  =  (1<<PCIE);                      // enable pin change interrupts
       sleep_mode();                             // go to sleep, wake up by pin change
+      GIMSK  = 0;                               // disable pin change interrupts
       PORTB |=  (1<<REF);                       // turn on pullup on REF pin
       PORTB |=  (1<<LED);                       // LED on
     }
@@ -63,8 +72,8 @@ int main(void) {
 }
 
 // Pin change interrupt service routine - resets millis
-ISR (PCINT0_vect) {
-  tmillis = 0;
+ISR(PCINT0_vect) {
+  tmillis = 0;                                  // reset millis counter
 }
 
 // Timer/counter compare match A interrupt service routine (every millisecond)

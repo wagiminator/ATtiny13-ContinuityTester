@@ -1,6 +1,6 @@
 // ===================================================================================
 // Project:   Continuity Tester based on ATtiny13A
-// Version:   v1.0
+// Version:   v1.1
 // Year:      2020
 // Author:    Stefan Wagner
 // Github:    https://github.com/wagiminator
@@ -23,6 +23,9 @@
 // -----------
 // Based on the project by David Johnson-Davies:
 // http://www.technoblogy.com/show?1YON
+//
+// Buzzer enhancements committed by Qi Wenmin:
+// https://github.com/qiwenmin
 //
 // Wiring:
 // -------
@@ -58,18 +61,18 @@
 #include <avr/interrupt.h>                      // for interrupts
 
 // Pin definitions
-#define REF     PB0                             // reference pin
-#define PROBE   PB1                             // pin connected to probe
-#define LED     PB2                             // pin connected to LED
-#define EMPTY   PB3                             // unused pin
-#define BUZZER  PB4                             // pin connected to buzzer
+#define REF       PB0                           // reference pin
+#define PROBE     PB1                           // pin connected to probe
+#define LED       PB2                           // pin connected to LED
+#define EMPTY     PB3                           // unused pin
+#define BUZZER    PB4                           // pin connected to buzzer
+
+// Firmware parameters
+#define TIMEOUT   10000                         // sleep timer in ms
+#define DEBOUNCE  50                            // buzzer debounce time in ms
 
 // Global variables
-volatile uint8_t t_in_50millis = 0;             // counts within 50 milliseconds
-volatile uint8_t t50millis = 0;                 // counts of 50 milliseconds
-const    uint8_t timeout_50ms = 200;            // 10 seconds sleep timer
-
-static const uint8_t debounce_timeout_50ms = 1; // delay 50ms before turning buzzer off
+volatile uint16_t tmillis = 0;                  // counts milliseconds
 
 // ===================================================================================
 // Main Function
@@ -78,7 +81,8 @@ static const uint8_t debounce_timeout_50ms = 1; // delay 50ms before turning buz
 int main(void) {
   set_sleep_mode(SLEEP_MODE_PWR_DOWN);          // set sleep mode to power down
   PRR    = (1<<PRADC);                          // shut down ADC to save power
-  DDRB   = (1<<LED) | (1<<BUZZER) | (1<<EMPTY); // LED, BUZZER and EMPTY pin as output
+  DIDR0  = (1<<REF) | (1<<EMPTY);               // disable digital input on REF and EMPTY
+  DDRB   = (1<<LED) | (1<<BUZZER);              // LED and BUZZER pin as output
   PORTB  = (1<<LED) | (1<<REF) | (1<<PROBE);    // LED on, internal pullups for REF and PROBE
   OCR0A  = 127;                                 // TOP value for timer0
   OCR0B  = 63;                                  // for generating 1000Hz buzzer tone
@@ -90,21 +94,18 @@ int main(void) {
 
   // Loop
   while(1) {
-    if (ACSR & (1<<ACO)) {
-      t_in_50millis = 0;                        // reset millis counters
-      t50millis = 0;
-      TIMSK0 |=  (1<<OCIE0B);                   // buzzer on  if comparator output is 1
-    } else {
-      if (t50millis > debounce_timeout_50ms) {
-        TIMSK0 &= ~(1<<OCIE0B);                 // buzzer off if comparator output is 0
-      }
-    }
-    if (t50millis > timeout_50ms) {             // go to sleep?
+    if(ACSR & (1<<ACO)) {                       // continuity detected?
+      tmillis = 0;                              // reset millis counter
+      TIMSK0 |= (1<<OCIE0B);                    // buzzer on
+    } else if(tmillis > DEBOUNCE)               // no continuity detected?
+      TIMSK0 &= ~(1<<OCIE0B);                   // buzzer off after debounce time
+
+    if(tmillis > TIMEOUT) {                     // go to sleep?
       PORTB &= ~(1<<LED);                       // LED off
       PORTB &= ~(1<<REF);                       // turn off pullup to save power
-      GIMSK = (1<<PCIE);                        // enable pin change interrupts
+      GIMSK  =  (1<<PCIE);                      // enable pin change interrupts
       sleep_mode();                             // go to sleep, wake up by pin change
-      GIMSK &= ~(1<<PCIE);                      // disable pin change interrupts
+      GIMSK  = 0;                               // disable pin change interrupts
       PORTB |=  (1<<REF);                       // turn on pullup on REF pin
       PORTB |=  (1<<LED);                       // LED on
     }
@@ -117,18 +118,13 @@ int main(void) {
 
 // Pin change interrupt service routine - resets millis
 ISR(PCINT0_vect) {
-  t_in_50millis = 0;                            // reset millis counters
-  t50millis = 0;
+  tmillis = 0;                                  // reset millis counter
 }
 
 // Timer/counter compare match A interrupt service routine (every millisecond)
 ISR(TIM0_COMPA_vect) {
   PORTB &= ~(1<<BUZZER);                        // BUZZER pin LOW
-  t_in_50millis++;                              // increase millis countera
-  if (t_in_50millis == 50) {
-    t_in_50millis = 0;
-    t50millis++;
-  }
+  tmillis++;                                    // increase millis counter
 }
 
 // Timer/counter compare match B interrupt service routine (enabled if buzzer has to beep)
