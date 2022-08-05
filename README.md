@@ -127,3 +127,10 @@ Since there is no ICSP header on the board, you have to program the ATtiny eithe
 
 ![pic2.jpg](https://raw.githubusercontent.com/wagiminator/ATtiny13-ContinuityTester/main/documentation/ContinuityTester_pic2.jpg)
 ![pic3.jpg](https://raw.githubusercontent.com/wagiminator/ATtiny13-ContinuityTester/main/documentation/ContinuityTester_pic3.jpg)
+![pic4.jpg](https://raw.githubusercontent.com/wagiminator/ATtiny13-ContinuityTester/main/documentation/ContinuityTester_pic4.jpg)
+
+# License
+![license.png](https://i.creativecommons.org/l/by-sa/3.0/88x31.png)
+
+This work is licensed under Creative Commons Attribution-ShareAlike 3.0 Unported License. 
+(http://creativecommons.org/licenses/by-sa/3.0/)
